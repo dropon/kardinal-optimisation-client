@@ -14,13 +14,14 @@ package openapi
 import (
 	"encoding/json"
 	"fmt"
+
 	"gopkg.in/validator.v2"
 )
 
 // Stop - struct for Stop
 type Stop struct {
 	AlternativesStop *AlternativesStop
-	SingleStop *SingleStop
+	SingleStop       *SingleStop
 }
 
 // AlternativesStopAsStop is a convenience function that returns AlternativesStop wrapped in Stop
@@ -37,55 +38,44 @@ func SingleStopAsStop(v *SingleStop) Stop {
 	}
 }
 
-
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *Stop) UnmarshalJSON(data []byte) error {
-	var err error
-	match := 0
-	// try to unmarshal data into AlternativesStop
-	err = newStrictDecoder(data).Decode(&dst.AlternativesStop)
-	if err == nil {
-		jsonAlternativesStop, _ := json.Marshal(dst.AlternativesStop)
-		if string(jsonAlternativesStop) == "{}" { // empty struct
-			dst.AlternativesStop = nil
-		} else {
-			if err = validator.Validate(dst.AlternativesStop); err != nil {
-				dst.AlternativesStop = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.AlternativesStop = nil
+	// 1. Define a helper struct to extract the discriminator field
+	var discriminator struct {
+		Type string `json:"type"`
 	}
 
-	// try to unmarshal data into SingleStop
-	err = newStrictDecoder(data).Decode(&dst.SingleStop)
-	if err == nil {
-		jsonSingleStop, _ := json.Marshal(dst.SingleStop)
-		if string(jsonSingleStop) == "{}" { // empty struct
-			dst.SingleStop = nil
-		} else {
-			if err = validator.Validate(dst.SingleStop); err != nil {
-				dst.SingleStop = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.SingleStop = nil
+	// 2. Read only the 'type' field from the JSON data
+	if err := json.Unmarshal(data, &discriminator); err != nil {
+		return fmt.Errorf("failed to read discriminator 'type' field: %w", err)
 	}
 
-	if match > 1 { // more than 1 match
-		// reset to nil
-		dst.AlternativesStop = nil
-		dst.SingleStop = nil
+	// 3. Use the discriminator value to select the correct concrete type
+	switch discriminator.Type {
+	case "single":
+		// Only unmarshal into the SingleStop struct
+		dst.SingleStop = &SingleStop{}
+		if err := newStrictDecoder(data).Decode(dst.SingleStop); err != nil {
+			return fmt.Errorf("failed to unmarshal as SingleStop: %w", err)
+		}
+		// Assuming validator.Validate is necessary here if it was used in the original SingleStop block
+		if err := validator.Validate(dst.SingleStop); err != nil {
+			return fmt.Errorf("validation failed for SingleStop profile: %w", err)
+		}
+		return nil
 
-		return fmt.Errorf("data matches more than one schema in oneOf(Stop)")
-	} else if match == 1 {
-		return nil // exactly one match
-	} else { // no match
-		return fmt.Errorf("data failed to match schemas in oneOf(Stop)")
+	// Assuming any other 'type' value should be treated as AlternativesStop (based on your description)
+	default:
+		// Unmarshal into the AlternativesStop struct
+		dst.AlternativesStop = &AlternativesStop{}
+		if err := newStrictDecoder(data).Decode(dst.AlternativesStop); err != nil {
+			return fmt.Errorf("failed to unmarshal as AlternativesStop: %w", err)
+		}
+		// Assuming validator.Validate is necessary here
+		if err := validator.Validate(dst.AlternativesStop); err != nil {
+			return fmt.Errorf("validation failed for AlternativesStop profile: %w", err)
+		}
+		return nil
 	}
 }
 
@@ -103,7 +93,7 @@ func (src Stop) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *Stop) GetActualInstance() (interface{}) {
+func (obj *Stop) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -120,7 +110,7 @@ func (obj *Stop) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj Stop) GetActualInstanceValue() (interface{}) {
+func (obj Stop) GetActualInstanceValue() interface{} {
 	if obj.AlternativesStop != nil {
 		return *obj.AlternativesStop
 	}
@@ -168,5 +158,3 @@ func (v *NullableStop) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
