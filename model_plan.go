@@ -12,8 +12,8 @@ Contact: contact@kardinal.ai
 package openapi
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,17 +22,18 @@ var _ MappedNullable = &Plan{}
 
 // Plan A plan for a date and agency, with resource and orders associated.
 type Plan struct {
-	Id interface{} `json:"id"`
+	Id       interface{} `json:"id"`
 	AgencyId interface{} `json:"agencyId"`
 	// The plan version.
 	Version *int32 `json:"version,omitempty"`
 	// To know if the plan is running.
-	Running *bool `json:"running,omitempty"`
-	Status *PlanStatus `json:"status,omitempty"`
-	State *PlanState `json:"state,omitempty"`
+	Running    *bool              `json:"running,omitempty"`
+	Status     *PlanStatus        `json:"status,omitempty"`
+	State      *PlanState         `json:"state,omitempty"`
 	Properties *map[string]string `json:"properties,omitempty"`
-	Resources []Resource `json:"resources"`
-	Orders []Order `json:"orders,omitempty"`
+	Resources  []Resource         `json:"resources"`
+	Mode       string             `json:"mode"`
+	Orders     []Order            `json:"orders,omitempty"`
 	// Additional operation time for a resource and a stop, according to tags (pairs of tags must be unique).
 	AdditionalOperationDurations []AdditionalOperationDuration `json:"additionalOperationDurations,omitempty"`
 	// Policies to remove the operation durations, by resource tag.
@@ -41,19 +42,19 @@ type Plan struct {
 	ForbiddenAssignments []ForbiddenAssignment `json:"forbiddenAssignments,omitempty"`
 	// Incompatibilities between stop tags (all elements must be different regardless of order).
 	// Deprecated
-	IncompatibleStopTags [][]string `json:"incompatibleStopTags,omitempty"`
+	IncompatibleStopTags  [][]string                       `json:"incompatibleStopTags,omitempty"`
 	AdditionalConstraints []PlanAdditionalConstraintsInner `json:"additionalConstraints,omitempty"`
 	// List of global constraints to be satisfied by the returned solution.
 	GlobalConstraints []PlanGlobalConstraintsInner `json:"globalConstraints,omitempty"`
 	// Access durations is an additional duration before the beginning of a group of stops with the same stop tag.
 	AccessDurationsByStopTag map[string]string `json:"accessDurationsByStopTag,omitempty"`
 	// This field allows users to define a limit in the number of resources that are simultaneously present at stops sharing the same stop tag.
-	OverlappingCapacitiesByStopTag *map[string]int32 `json:"overlappingCapacitiesByStopTag,omitempty"`
-	SetupDurations []SetupDuration `json:"setupDurations,omitempty"`
-	Objectives []PlanObjectivesInner `json:"objectives,omitempty"`
+	OverlappingCapacitiesByStopTag *map[string]int32     `json:"overlappingCapacitiesByStopTag,omitempty"`
+	SetupDurations                 []SetupDuration       `json:"setupDurations,omitempty"`
+	Objectives                     []PlanObjectivesInner `json:"objectives,omitempty"`
 	// A period of time, expressed in the ISO8601 **duration** format.
 	MaxOptimizationDuration *string `json:"maxOptimizationDuration,omitempty" validate:"regexp=^P(\\\\d+Y)?(\\\\d+M)?(\\\\d+W)?(\\\\d+D)?(T(\\\\d+H)?(\\\\d+M)?(\\\\d+S)?)?$"`
-	// The time zone is a string code which identifies a region of the world in the \"time zone database\", also called \"tz database\". The tz database is a partition of the world into regions where local clocks all show the same time. This database gives the rules for time offset and daylight saving time in each region.  How do we use it?  In order to work with time events accurately, we usually use datetimes in the iso-8601 format, without explicit time zone. This format is quite well suported by many programming languages, and it is well suited for technical data exchange. But it is not easy to use for humans.  For instance, here are three datetimes in iso-8601 format, which give the same exact moment in time: - \"2025-05-22T05:43:00Z\" - \"2025-05-22T06:43:00+01:00\" - \"2025-05-22T07:43:00+02:00\"  For a non-technical user, it is difficult to know how to relate this to the time displayed on a watch or a clock.  We improve the user experience by adding the support of local datetimes, thanks to the use of the time zone, which allows to transform a local datetime into an iso-8601 datetime: - local datetime + timezone (tz) = iso-8601 datetime  For instance, here are five datetimes which all give the same exact moment in time: - \"2025-05-22T05:43:00Z\" - \"2025-05-22T06:43:00+01:00\" - \"2025-05-22T07:43:00+02:00\" - \"2025-05-22 07:43:00\"       + timezone \"tz\": \"Europe/Paris\" - \"2025-05-22 07:43\"          + timezone \"tz\": \"Europe/Paris\"  Note: the last example (\"2025-05-22 07:43\") illustrates the support of local datetimes without seconds, which can be very practical for users.  In order for local datetimes to be supported, some JSON input objects contain a \"tz\" time zone property. This \"tz\" property is used to pre-process the JSON input payload, like this: - We check if a valid timezone can be extracted from the \"tz\" property, - If so, we perform the following actions:   - Walk through the whole JSON content to look for local datetimes,   - Use the timezone to transform each local datetime into an iso-8601 datetime.  Important: some objects contain a \"properties\" sub-object, which is a map of custom client data; the content of the \"properties\" sub-objects is always excluded from the time zone pre-processing. 
+	// The time zone is a string code which identifies a region of the world in the \"time zone database\", also called \"tz database\". The tz database is a partition of the world into regions where local clocks all show the same time. This database gives the rules for time offset and daylight saving time in each region.  How do we use it?  In order to work with time events accurately, we usually use datetimes in the iso-8601 format, without explicit time zone. This format is quite well suported by many programming languages, and it is well suited for technical data exchange. But it is not easy to use for humans.  For instance, here are three datetimes in iso-8601 format, which give the same exact moment in time: - \"2025-05-22T05:43:00Z\" - \"2025-05-22T06:43:00+01:00\" - \"2025-05-22T07:43:00+02:00\"  For a non-technical user, it is difficult to know how to relate this to the time displayed on a watch or a clock.  We improve the user experience by adding the support of local datetimes, thanks to the use of the time zone, which allows to transform a local datetime into an iso-8601 datetime: - local datetime + timezone (tz) = iso-8601 datetime  For instance, here are five datetimes which all give the same exact moment in time: - \"2025-05-22T05:43:00Z\" - \"2025-05-22T06:43:00+01:00\" - \"2025-05-22T07:43:00+02:00\" - \"2025-05-22 07:43:00\"       + timezone \"tz\": \"Europe/Paris\" - \"2025-05-22 07:43\"          + timezone \"tz\": \"Europe/Paris\"  Note: the last example (\"2025-05-22 07:43\") illustrates the support of local datetimes without seconds, which can be very practical for users.  In order for local datetimes to be supported, some JSON input objects contain a \"tz\" time zone property. This \"tz\" property is used to pre-process the JSON input payload, like this: - We check if a valid timezone can be extracted from the \"tz\" property, - If so, we perform the following actions:   - Walk through the whole JSON content to look for local datetimes,   - Use the timezone to transform each local datetime into an iso-8601 datetime.  Important: some objects contain a \"properties\" sub-object, which is a map of custom client data; the content of the \"properties\" sub-objects is always excluded from the time zone pre-processing.
 	Tz *string `json:"tz,omitempty"`
 	// The plan's creation datetime.
 	CreatedAt *string `json:"createdAt,omitempty"`
@@ -815,6 +816,7 @@ func (o *Plan) HasUpdatedAt() bool {
 func (o *Plan) SetUpdatedAt(v string) {
 	o.UpdatedAt.Set(&v)
 }
+
 // SetUpdatedAtNil sets the value for UpdatedAt to be an explicit nil
 func (o *Plan) SetUpdatedAtNil() {
 	o.UpdatedAt.Set(nil)
@@ -857,6 +859,7 @@ func (o *Plan) HasArchivedAt() bool {
 func (o *Plan) SetArchivedAt(v string) {
 	o.ArchivedAt.Set(&v)
 }
+
 // SetArchivedAtNil sets the value for ArchivedAt to be an explicit nil
 func (o *Plan) SetArchivedAtNil() {
 	o.ArchivedAt.Set(nil)
@@ -932,7 +935,7 @@ func (o *Plan) SetSharedCapacities(v bool) {
 }
 
 func (o Plan) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1029,12 +1032,11 @@ func (o *Plan) UnmarshalJSON(data []byte) (err error) {
 	allProperties := make(map[string]interface{})
 
 	err = json.Unmarshal(data, &allProperties)
-
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -1045,7 +1047,6 @@ func (o *Plan) UnmarshalJSON(data []byte) (err error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	err = decoder.Decode(&varPlan)
-
 	if err != nil {
 		return err
 	}
@@ -1090,5 +1091,3 @@ func (v *NullablePlan) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
