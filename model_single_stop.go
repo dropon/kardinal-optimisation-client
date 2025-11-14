@@ -12,8 +12,8 @@ Contact: contact@kardinal.ai
 package openapi
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -24,17 +24,17 @@ var _ MappedNullable = &SingleStop{}
 type SingleStop struct {
 	Type *string `json:"type,omitempty"`
 	// Single stop ids must be unique within a plan.
-	Id string `json:"id" validate:"regexp=^[a-zA-Z0-9-._~:@!$,]+$"`
+	Id         string             `json:"id"`
 	Properties *map[string]string `json:"properties,omitempty"`
 	// prefix:suffix best practice, not forced.
-	Tags []string `json:"tags,omitempty"`
-	Position Position `json:"position"`
-	Kind *StopKind `json:"kind,omitempty"`
+	Tags     []string  `json:"tags,omitempty"`
+	Position Position  `json:"position"`
+	Kind     *StopKind `json:"kind,omitempty"`
 	// A period of time, expressed in the ISO8601 **duration** format.
-	OperationDuration *string `json:"operationDuration,omitempty" validate:"regexp=^P(\\\\d+Y)?(\\\\d+M)?(\\\\d+W)?(\\\\d+D)?(T(\\\\d+H)?(\\\\d+M)?(\\\\d+S)?)?$"`
-	Capacities *map[string]float32 `json:"capacities,omitempty"`
-	AuthorizedTimeWindows []TaggedTimeWindow `json:"authorizedTimeWindows,omitempty"`
-	PreferredTimeWindows []TaggedTimeWindow `json:"preferredTimeWindows,omitempty"`
+	OperationDuration     *string             `json:"operationDuration,omitempty"`
+	Capacities            *map[string]float32 `json:"capacities,omitempty"`
+	AuthorizedTimeWindows []TaggedTimeWindow  `json:"authorizedTimeWindows,omitempty"`
+	PreferredTimeWindows  []TaggedTimeWindow  `json:"preferredTimeWindows,omitempty"`
 }
 
 type _SingleStop SingleStop
@@ -371,7 +371,7 @@ func (o *SingleStop) SetPreferredTimeWindows(v []TaggedTimeWindow) {
 }
 
 func (o SingleStop) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -421,12 +421,11 @@ func (o *SingleStop) UnmarshalJSON(data []byte) (err error) {
 	allProperties := make(map[string]interface{})
 
 	err = json.Unmarshal(data, &allProperties)
-
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -435,9 +434,7 @@ func (o *SingleStop) UnmarshalJSON(data []byte) (err error) {
 	varSingleStop := _SingleStop{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
 	err = decoder.Decode(&varSingleStop)
-
 	if err != nil {
 		return err
 	}
@@ -482,5 +479,3 @@ func (v *NullableSingleStop) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
