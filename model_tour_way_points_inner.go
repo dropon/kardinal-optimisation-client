@@ -14,15 +14,14 @@ package openapi
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/validator.v2"
 )
 
 // TourWayPointsInner - struct for TourWayPointsInner
 type TourWayPointsInner struct {
 	WayPointBegin *WayPointBegin
 	WayPointBreak *WayPointBreak
-	WayPointEnd *WayPointEnd
-	WayPointStop *WayPointStop
+	WayPointEnd   *WayPointEnd
+	WayPointStop  *WayPointStop
 }
 
 // WayPointBeginAsTourWayPointsInner is a convenience function that returns WayPointBegin wrapped in TourWayPointsInner
@@ -53,91 +52,55 @@ func WayPointStopAsTourWayPointsInner(v *WayPointStop) TourWayPointsInner {
 	}
 }
 
-
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *TourWayPointsInner) UnmarshalJSON(data []byte) error {
-	var err error
-	match := 0
-	// try to unmarshal data into WayPointBegin
-	err = newStrictDecoder(data).Decode(&dst.WayPointBegin)
-	if err == nil {
-		jsonWayPointBegin, _ := json.Marshal(dst.WayPointBegin)
-		if string(jsonWayPointBegin) == "{}" { // empty struct
-			dst.WayPointBegin = nil
-		} else {
-			if err = validator.Validate(dst.WayPointBegin); err != nil {
-				dst.WayPointBegin = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.WayPointBegin = nil
+	// 1. Define a helper struct to extract the 'type' discriminator field
+	var discriminator struct {
+		Type string `json:"type"`
 	}
 
-	// try to unmarshal data into WayPointBreak
-	err = newStrictDecoder(data).Decode(&dst.WayPointBreak)
-	if err == nil {
-		jsonWayPointBreak, _ := json.Marshal(dst.WayPointBreak)
-		if string(jsonWayPointBreak) == "{}" { // empty struct
-			dst.WayPointBreak = nil
-		} else {
-			if err = validator.Validate(dst.WayPointBreak); err != nil {
-				dst.WayPointBreak = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.WayPointBreak = nil
+	// 2. Read only the 'type' field from the JSON data
+	if err := json.Unmarshal(data, &discriminator); err != nil {
+		return fmt.Errorf("failed to read discriminator 'type' field for waypoint: %w", err)
 	}
 
-	// try to unmarshal data into WayPointEnd
-	err = newStrictDecoder(data).Decode(&dst.WayPointEnd)
-	if err == nil {
-		jsonWayPointEnd, _ := json.Marshal(dst.WayPointEnd)
-		if string(jsonWayPointEnd) == "{}" { // empty struct
-			dst.WayPointEnd = nil
-		} else {
-			if err = validator.Validate(dst.WayPointEnd); err != nil {
-				dst.WayPointEnd = nil
-			} else {
-				match++
-			}
+	// 3. Use the discriminator value to select the correct concrete type
+	switch discriminator.Type {
+	case "begin":
+		dst.WayPointBegin = &WayPointBegin{}
+		if err := newStrictDecoder(data).Decode(dst.WayPointBegin); err != nil {
+			return fmt.Errorf("failed to unmarshal as WayPointBegin: %w", err)
 		}
-	} else {
-		dst.WayPointEnd = nil
-	}
+		// Optional: Re-run validation if necessary
+		// if err := validator.Validate(dst.WayPointBegin); err != nil {
+		//     return fmt.Errorf("validation failed for WayPointBegin: %w", err)
+		// }
+		return nil
 
-	// try to unmarshal data into WayPointStop
-	err = newStrictDecoder(data).Decode(&dst.WayPointStop)
-	if err == nil {
-		jsonWayPointStop, _ := json.Marshal(dst.WayPointStop)
-		if string(jsonWayPointStop) == "{}" { // empty struct
-			dst.WayPointStop = nil
-		} else {
-			if err = validator.Validate(dst.WayPointStop); err != nil {
-				dst.WayPointStop = nil
-			} else {
-				match++
-			}
+	case "break":
+		dst.WayPointBreak = &WayPointBreak{}
+		if err := newStrictDecoder(data).Decode(dst.WayPointBreak); err != nil {
+			return fmt.Errorf("failed to unmarshal as WayPointBreak: %w", err)
 		}
-	} else {
-		dst.WayPointStop = nil
-	}
+		return nil
 
-	if match > 1 { // more than 1 match
-		// reset to nil
-		dst.WayPointBegin = nil
-		dst.WayPointBreak = nil
-		dst.WayPointEnd = nil
-		dst.WayPointStop = nil
+	case "end":
+		dst.WayPointEnd = &WayPointEnd{}
+		if err := newStrictDecoder(data).Decode(dst.WayPointEnd); err != nil {
+			return fmt.Errorf("failed to unmarshal as WayPointEnd: %w", err)
+		}
+		return nil
 
-		return fmt.Errorf("data matches more than one schema in oneOf(TourWayPointsInner)")
-	} else if match == 1 {
-		return nil // exactly one match
-	} else { // no match
-		return fmt.Errorf("data failed to match schemas in oneOf(TourWayPointsInner)")
+	case "stop":
+		dst.WayPointStop = &WayPointStop{}
+		if err := newStrictDecoder(data).Decode(dst.WayPointStop); err != nil {
+			return fmt.Errorf("failed to unmarshal as WayPointStop: %w", err)
+		}
+		return nil
+
+	default:
+		// Handle unknown or missing type
+		return fmt.Errorf("data failed to match schemas in oneOf(TourWayPointsInner): unknown type '%s'", discriminator.Type)
 	}
 }
 
@@ -163,7 +126,7 @@ func (src TourWayPointsInner) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *TourWayPointsInner) GetActualInstance() (interface{}) {
+func (obj *TourWayPointsInner) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -188,7 +151,7 @@ func (obj *TourWayPointsInner) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj TourWayPointsInner) GetActualInstanceValue() (interface{}) {
+func (obj TourWayPointsInner) GetActualInstanceValue() interface{} {
 	if obj.WayPointBegin != nil {
 		return *obj.WayPointBegin
 	}
@@ -244,5 +207,3 @@ func (v *NullableTourWayPointsInner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
