@@ -14,18 +14,17 @@ package openapi
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/validator.v2"
 )
 
 // ResourceVehicleProfile - struct for ResourceVehicleProfile
 type ResourceVehicleProfile struct {
-	VehicleProfileBicycle *VehicleProfileBicycle
-	VehicleProfileCar *VehicleProfileCar
-	VehicleProfileFly *VehicleProfileFly
-	VehicleProfileMotorbike *VehicleProfileMotorbike
+	VehicleProfileBicycle    *VehicleProfileBicycle
+	VehicleProfileCar        *VehicleProfileCar
+	VehicleProfileFly        *VehicleProfileFly
+	VehicleProfileMotorbike  *VehicleProfileMotorbike
 	VehicleProfilePedestrian *VehicleProfilePedestrian
-	VehicleProfileScooter *VehicleProfileScooter
-	VehicleProfileTruck *VehicleProfileTruck
+	VehicleProfileScooter    *VehicleProfileScooter
+	VehicleProfileTruck      *VehicleProfileTruck
 }
 
 // VehicleProfileBicycleAsResourceVehicleProfile is a convenience function that returns VehicleProfileBicycle wrapped in ResourceVehicleProfile
@@ -77,145 +76,76 @@ func VehicleProfileTruckAsResourceVehicleProfile(v *VehicleProfileTruck) Resourc
 	}
 }
 
-
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *ResourceVehicleProfile) UnmarshalJSON(data []byte) error {
-	var err error
-	match := 0
-	// try to unmarshal data into VehicleProfileBicycle
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileBicycle)
-	if err == nil {
-		jsonVehicleProfileBicycle, _ := json.Marshal(dst.VehicleProfileBicycle)
-		if string(jsonVehicleProfileBicycle) == "{}" { // empty struct
-			dst.VehicleProfileBicycle = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileBicycle); err != nil {
-				dst.VehicleProfileBicycle = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.VehicleProfileBicycle = nil
+	// 1. Define a helper struct to extract the discriminator field
+	var discriminator struct {
+		Type string `json:"type"`
 	}
 
-	// try to unmarshal data into VehicleProfileCar
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileCar)
-	if err == nil {
-		jsonVehicleProfileCar, _ := json.Marshal(dst.VehicleProfileCar)
-		if string(jsonVehicleProfileCar) == "{}" { // empty struct
-			dst.VehicleProfileCar = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileCar); err != nil {
-				dst.VehicleProfileCar = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.VehicleProfileCar = nil
+	// 2. Read only the 'type' field from the JSON data
+	if err := json.Unmarshal(data, &discriminator); err != nil {
+		return fmt.Errorf("failed to read 'type' discriminator field: %w", err)
 	}
 
-	// try to unmarshal data into VehicleProfileFly
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileFly)
-	if err == nil {
-		jsonVehicleProfileFly, _ := json.Marshal(dst.VehicleProfileFly)
-		if string(jsonVehicleProfileFly) == "{}" { // empty struct
-			dst.VehicleProfileFly = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileFly); err != nil {
-				dst.VehicleProfileFly = nil
-			} else {
-				match++
-			}
+	// 3. Use the discriminator value to select the correct profile type
+	switch discriminator.Type {
+	case "bicycle":
+		dst.VehicleProfileBicycle = &VehicleProfileBicycle{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileBicycle); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileBicycle: %w", err)
 		}
-	} else {
-		dst.VehicleProfileFly = nil
-	}
+		// Optional: Re-run validation if necessary, otherwise the check can be skipped
+		// if err := validator.Validate(dst.VehicleProfileBicycle); err != nil {
+		//     return fmt.Errorf("validation failed for Bicycle profile: %w", err)
+		// }
+		return nil
 
-	// try to unmarshal data into VehicleProfileMotorbike
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileMotorbike)
-	if err == nil {
-		jsonVehicleProfileMotorbike, _ := json.Marshal(dst.VehicleProfileMotorbike)
-		if string(jsonVehicleProfileMotorbike) == "{}" { // empty struct
-			dst.VehicleProfileMotorbike = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileMotorbike); err != nil {
-				dst.VehicleProfileMotorbike = nil
-			} else {
-				match++
-			}
+	case "car":
+		dst.VehicleProfileCar = &VehicleProfileCar{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileCar); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileCar: %w", err)
 		}
-	} else {
-		dst.VehicleProfileMotorbike = nil
-	}
+		return nil
 
-	// try to unmarshal data into VehicleProfilePedestrian
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfilePedestrian)
-	if err == nil {
-		jsonVehicleProfilePedestrian, _ := json.Marshal(dst.VehicleProfilePedestrian)
-		if string(jsonVehicleProfilePedestrian) == "{}" { // empty struct
-			dst.VehicleProfilePedestrian = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfilePedestrian); err != nil {
-				dst.VehicleProfilePedestrian = nil
-			} else {
-				match++
-			}
+	case "fly":
+		dst.VehicleProfileFly = &VehicleProfileFly{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileFly); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileFly: %w", err)
 		}
-	} else {
-		dst.VehicleProfilePedestrian = nil
-	}
+		return nil
 
-	// try to unmarshal data into VehicleProfileScooter
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileScooter)
-	if err == nil {
-		jsonVehicleProfileScooter, _ := json.Marshal(dst.VehicleProfileScooter)
-		if string(jsonVehicleProfileScooter) == "{}" { // empty struct
-			dst.VehicleProfileScooter = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileScooter); err != nil {
-				dst.VehicleProfileScooter = nil
-			} else {
-				match++
-			}
+	case "motorbike":
+		dst.VehicleProfileMotorbike = &VehicleProfileMotorbike{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileMotorbike); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileMotorbike: %w", err)
 		}
-	} else {
-		dst.VehicleProfileScooter = nil
-	}
+		return nil
 
-	// try to unmarshal data into VehicleProfileTruck
-	err = newStrictDecoder(data).Decode(&dst.VehicleProfileTruck)
-	if err == nil {
-		jsonVehicleProfileTruck, _ := json.Marshal(dst.VehicleProfileTruck)
-		if string(jsonVehicleProfileTruck) == "{}" { // empty struct
-			dst.VehicleProfileTruck = nil
-		} else {
-			if err = validator.Validate(dst.VehicleProfileTruck); err != nil {
-				dst.VehicleProfileTruck = nil
-			} else {
-				match++
-			}
+	case "pedestrian":
+		dst.VehicleProfilePedestrian = &VehicleProfilePedestrian{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfilePedestrian); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfilePedestrian: %w", err)
 		}
-	} else {
-		dst.VehicleProfileTruck = nil
-	}
+		return nil
 
-	if match > 1 { // more than 1 match
-		// reset to nil
-		dst.VehicleProfileBicycle = nil
-		dst.VehicleProfileCar = nil
-		dst.VehicleProfileFly = nil
-		dst.VehicleProfileMotorbike = nil
-		dst.VehicleProfilePedestrian = nil
-		dst.VehicleProfileScooter = nil
-		dst.VehicleProfileTruck = nil
+	case "scooter":
+		dst.VehicleProfileScooter = &VehicleProfileScooter{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileScooter); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileScooter: %w", err)
+		}
+		return nil
 
-		return fmt.Errorf("data matches more than one schema in oneOf(ResourceVehicleProfile)")
-	} else if match == 1 {
-		return nil // exactly one match
-	} else { // no match
-		return fmt.Errorf("data failed to match schemas in oneOf(ResourceVehicleProfile)")
+	case "truck":
+		dst.VehicleProfileTruck = &VehicleProfileTruck{}
+		if err := newStrictDecoder(data).Decode(dst.VehicleProfileTruck); err != nil {
+			return fmt.Errorf("failed to unmarshal as VehicleProfileTruck: %w", err)
+		}
+		return nil
+
+	default:
+		// Handle unknown or missing type
+		return fmt.Errorf("data failed to match schemas in oneOf(ResourceVehicleProfile): unknown type '%s'", discriminator.Type)
 	}
 }
 
@@ -253,7 +183,7 @@ func (src ResourceVehicleProfile) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *ResourceVehicleProfile) GetActualInstance() (interface{}) {
+func (obj *ResourceVehicleProfile) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -290,7 +220,7 @@ func (obj *ResourceVehicleProfile) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj ResourceVehicleProfile) GetActualInstanceValue() (interface{}) {
+func (obj ResourceVehicleProfile) GetActualInstanceValue() interface{} {
 	if obj.VehicleProfileBicycle != nil {
 		return *obj.VehicleProfileBicycle
 	}
@@ -358,5 +288,3 @@ func (v *NullableResourceVehicleProfile) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
